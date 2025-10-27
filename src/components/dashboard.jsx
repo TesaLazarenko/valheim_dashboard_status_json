@@ -9,7 +9,7 @@ import {
   useOnline,
   getPlatformLabel,
   getServerTypeLabel,
-} from "./utils";
+} from "../utils/utils";
 
 function fetchServerStatus() {
   return fetch("/api/server-status")

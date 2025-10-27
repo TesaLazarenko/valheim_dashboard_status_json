@@ -1,6 +1,6 @@
 import React from 'react';
 import reactDOM from 'react-dom/client';
-import ValheimServerDashboard from './dashboard';
+import ValheimServerDashboard from './components/dashboard';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
