@@ -6,6 +6,9 @@ import {
   parseKeywords,
   responsePlaceholder,
   humanDuration,
+  useOnline,
+  getPlatformLabel,
+  getServerTypeLabel,
 } from "./utils";
 
 function fetchServerStatus() {
@@ -14,26 +17,6 @@ function fetchServerStatus() {
       if (!r.ok) throw new Error("Network response was not ok");
       return r.json();
     });
-}
-
-/**
- * Determines the online status of a server based on the last update time.
- *
- * @param {string|Date} lastUpdate - The timestamp of the last update. It can be a date string or a Date object.
- * @return {string|null} Returns "online" if the last update was within the last 2 minutes,
- *                       "offline" if it was more than 2 minutes ago,
- *                       or null if the lastUpdate is invalid.
- */
-function useOnline(lastUpdate) {
-  return useMemo(() => {
-    // Consider server online if last update within 2 minutes
-    const last = new Date(lastUpdate).getTime();
-    const now = Date.now();
-    if (isNaN(last)) return null;
-    const diff = now - last;
-    if (diff < 1000 * 60 * 2) return "online";
-    return "offline";
-  }, [lastUpdate]);
 }
 
 export default function ValheimServerDashboard() {
@@ -109,12 +92,12 @@ export default function ValheimServerDashboard() {
 
                 <div>
                   <dt className="text-xs text-gray-500">Platform</dt>
-                  <dd className="font-medium">{data.platform}</dd>
+                  <dd className="font-medium">{getPlatformLabel(data.platform)}</dd>
                 </div>
 
                 <div>
                   <dt className="text-xs text-gray-500">Server type</dt>
-                  <dd className="font-medium">{data.server_type}</dd>
+                  <dd className="font-medium">{getServerTypeLabel(data.server_type)}</dd>
                 </div>
 
                 <div>

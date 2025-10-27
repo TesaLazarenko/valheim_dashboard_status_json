@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 export function formatDateIso(iso) {
   try {
     const d = new Date(iso);
@@ -32,6 +34,26 @@ export function relativeTime(iso) {
   return `${days}d ago`;
 }
 
+/**
+ * Determines the online status of a server based on the last update time.
+ *
+ * @param {string|Date} lastUpdate - The timestamp of the last update. It can be a date string or a Date object.
+ * @return {string|null} Returns "online" if the last update was within the last 2 minutes,
+ *                       "offline" if it was more than 2 minutes ago,
+ *                       or null if the lastUpdate is invalid.
+ */
+export function useOnline(lastUpdate) {
+  return useMemo(() => {
+    // Consider server online if last update within 2 minutes
+    const last = new Date(lastUpdate).getTime();
+    const now = Date.now();
+    if (isNaN(last)) return null;
+    const diff = now - last;
+    if (diff < 1000 * 60 * 2) return "online";
+    return "offline";
+  }, [lastUpdate]);
+}
+
 export function parseKeywords(k) {
   if (!k) return {};
   const parts = k.split(",");
@@ -60,4 +82,25 @@ export function responsePlaceholder() {
     game_id: null,
     players: null,
   }
+}
+
+// Helper functions to show friendly names for platform and server type
+export const PLATFORM_MAP = {
+  l: 'Linux',
+  w: 'Windows',
+  m: 'macOS',
+};
+
+export function getPlatformLabel(code) {
+  return PLATFORM_MAP[code] || code || "—";
+}
+
+export const SERVER_TYPE_MAP = {
+  d: 'Dedicated',
+  l: 'Local',
+  // Add more as needed
+};
+
+export function getServerTypeLabel(code) {
+  return SERVER_TYPE_MAP[code] || code || "—";
 }
