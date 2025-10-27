@@ -1,6 +1,12 @@
 import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { formatDateIso, relativeTime, parseKeywords, responsePlaceholder } from "./utils";
+import {
+  formatDateIso,
+  relativeTime,
+  parseKeywords,
+  responsePlaceholder,
+  humanDuration,
+} from "./utils";
 
 function fetchServerStatus() {
   return fetch("/api/server-status")
@@ -10,7 +16,27 @@ function fetchServerStatus() {
     });
 }
 
-export default function ValheimServerDashboard({ data: propData }) {
+/**
+ * Determines the online status of a server based on the last update time.
+ *
+ * @param {string|Date} lastUpdate - The timestamp of the last update. It can be a date string or a Date object.
+ * @return {string|null} Returns "online" if the last update was within the last 2 minutes,
+ *                       "offline" if it was more than 2 minutes ago,
+ *                       or null if the lastUpdate is invalid.
+ */
+function useOnline(lastUpdate) {
+  return useMemo(() => {
+    // Consider server online if last update within 2 minutes
+    const last = new Date(lastUpdate).getTime();
+    const now = Date.now();
+    if (isNaN(last)) return null;
+    const diff = now - last;
+    if (diff < 1000 * 60 * 2) return "online";
+    return "offline";
+  }, [lastUpdate]);
+}
+
+export default function ValheimServerDashboard() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["server-status"],
     queryFn: fetchServerStatus,
@@ -19,16 +45,7 @@ export default function ValheimServerDashboard({ data: propData }) {
   });
 
   const parsedKeywords = useMemo(() => parseKeywords(data?.keywords), [data?.keywords]);
-
-  const status = useMemo(() => {
-    // Consider server online if last update within 2 minutes
-    const last = new Date(data.last_status_update).getTime();
-    const now = Date.now();
-    if (isNaN(last)) return { label: "unknown", color: "gray" };
-    const diff = now - last;
-    if (diff < 1000 * 60 * 2) return { label: "online", color: "green" };
-    return { label: "offline", color: "red" };
-  }, [data.last_status_update]);
+  const status = useOnline(data.last_status_update);
 
   return (
     <div className="p-6 min-h-screen bg-gray-50">
@@ -55,14 +72,14 @@ export default function ValheimServerDashboard({ data: propData }) {
           <div className="flex items-center gap-3">
             <span
               className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                status.color === 'green' 
-                  ? 'bg-green-100 text-green-800' 
-                  : status.color === 'red' 
-                  ? 'bg-red-100 text-red-800' 
-                  : 'bg-gray-100 text-gray-800'
+                status === 'online'
+                  ? 'bg-green-100 text-green-800'
+                  : status === 'offline'
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-gray-100 text-gray-800'
               }`}
             >
-              {status.label.toUpperCase()}
+              {status.toUpperCase()}
             </span>
 
             <div className="text-right text-sm">
@@ -73,7 +90,7 @@ export default function ValheimServerDashboard({ data: propData }) {
           </div>
         </header>
 
-        <main className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <main className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Info card */}
           <section className="md:col-span-2">
             <div className="bg-white shadow-sm rounded-2xl p-5">
@@ -134,24 +151,32 @@ export default function ValheimServerDashboard({ data: propData }) {
                 </div>
               </div>
             </div>
+          </section>
 
-            <div className="mt-6 bg-white shadow-sm rounded-2xl p-5">
+          <aside>
+            <div className="bg-white shadow-sm rounded-2xl p-5">
               <h2 className="text-lg font-medium mb-4">Players</h2>
               {data.players && data.players.length > 0 ? (
                 <table className="w-full text-left text-sm">
                   <thead className="text-xs text-gray-500 border-b">
                   <tr>
                     <th className="py-2">Name</th>
-                    <th className="py-2">Steam ID</th>
+                    <th className="py-2">Duration</th>
                     <th className="py-2">Score</th>
                   </tr>
                   </thead>
                   <tbody>
                   {data.players.map((p, idx) => (
                     <tr key={idx} className="odd:bg-gray-50">
-                      <td className="py-2">{p.name}</td>
-                      <td className="py-2">{p.steam_id}</td>
-                      <td className="py-2">{p.score ?? '—'}</td>
+                      <td className="py-2">
+                        {p.name && p.name.trim() ? p.name :
+                          <span className="text-gray-400 italic">(unnamed)</span>}
+                      </td>
+                      <td className="py-2">
+                        {typeof p.duration === "number"
+                          ? humanDuration(p.duration)
+                          : <span className="text-gray-400">—</span>}
+                      </td>
                     </tr>
                   ))}
                   </tbody>
@@ -159,23 +184,6 @@ export default function ValheimServerDashboard({ data: propData }) {
               ) : (
                 <div className="text-sm text-gray-500">No players connected.</div>
               )}
-            </div>
-          </section>
-
-          {/* Right column widgets */}
-          <aside>
-            <div className="bg-white shadow-sm rounded-2xl p-5">
-              <h3 className="text-sm font-medium mb-3">Diagnostics</h3>
-              <dl className="text-sm text-gray-600">
-                <div className="flex justify-between py-1">
-                  <dt>Last status</dt>
-                  <dd>{formatDateIso(data.last_status_update)}</dd>
-                </div>
-                <div className="flex justify-between py-1">
-                  <dt>Relative</dt>
-                  <dd>{relativeTime(data.last_status_update)}</dd>
-                </div>
-              </dl>
             </div>
           </aside>
         </main>

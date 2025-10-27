@@ -7,6 +7,17 @@ export function formatDateIso(iso) {
   }
 }
 
+// Format a duration in seconds to "Xm Ys" (only minutes/seconds for small enough times)
+export function humanDuration(seconds) {
+  if (typeof seconds !== "number" || isNaN(seconds)) return "—";
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  let out = [];
+  if (mins > 0) out.push(`${mins}m`);
+  out.push(`${secs}s`);
+  return out.join(" ");
+}
+
 export function relativeTime(iso) {
   const diff = Date.now() - new Date(iso).getTime();
   if (isNaN(diff)) return "unknown";
