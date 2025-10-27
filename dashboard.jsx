@@ -23,7 +23,7 @@ export default function ValheimServerDashboard() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["server-status"],
     queryFn: fetchServerStatus,
-    refetchInterval: 1_000,
+    refetchInterval: 5_000,
     placeholderData: responsePlaceholder(),
   });
 
