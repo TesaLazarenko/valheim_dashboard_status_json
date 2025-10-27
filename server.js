@@ -1,10 +1,9 @@
 // Hono server for Valheim Status Dashboard
 import { Hono } from 'hono';
 import { serveStatic } from 'hono/bun';
-import { cors } from 'hono/cors';
 
 const PORT = process.env.PORT || 3000;
-const VALHEIM_SERVER_URL = "http://192.168.1.109:2080";
+const VALHEIM_SERVER_URL = process.env.VALHEIM_SERVER || "http://localhost";
 
 const app = new Hono();
 
@@ -19,10 +18,10 @@ app.get('/api/server-status', async (c) => {
   try {
     const targetUrl = `${VALHEIM_SERVER_URL}/status.json`;
     console.log(`Proxying API request to: ${targetUrl}`);
-    
+
     const response = await fetch(targetUrl);
     const data = await response.text();
-    
+
     return c.json(JSON.parse(data), response.status);
   } catch (error) {
     console.error('Error proxying API request:', error);
@@ -34,7 +33,7 @@ app.get('/api/server-status', async (c) => {
 });
 
 // Static file serving
-app.use('/*', serveStatic({ 
+app.use('/*', serveStatic({
   root: './dist',
   onNotFound: (path, c) => {
     // Handle SPA routing - serve index.html for unknown routes
@@ -44,7 +43,7 @@ app.use('/*', serveStatic({
 
 // Fallback for SPA routing
 app.notFound((c) => {
-  return serveStatic({ 
+  return serveStatic({
     root: './dist',
     path: '/index.html'
   })(c, () => c.text('Not Found', 404));
